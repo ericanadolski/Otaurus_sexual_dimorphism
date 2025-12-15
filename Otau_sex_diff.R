@@ -4,6 +4,7 @@ library(tximport)
 library(DESeq2)
 library(ggplot2)
 library(pheatmap)
+library
 library(edgeR)
 library(stats)
 library(topGO)
@@ -12,7 +13,8 @@ library(RColorBrewer)
 # I. RNAseq data analyses #############################################################################
 ##### Step 1: import RNAseq read abundance from salmon #####
 # read in study design
-Ot_sample_table <- read.delim("/Volumes/T7_Drive_2/RNAseq/Ot-sample-info2.txt") #Ot F11 E removed
+Ot_sample_table <- read.delim("/Users/ericanadolski/GitHub/Otaurus_sexual_dimorphism/Ot_sample_info_RNA.txt") 
+#Ot F11 E removed from Ot_sample_info2.txt
 Ot_sample_table <- Ot_sample_table %>% mutate(Sex_Trait = paste0(Sex, "_", Trait)) 
 
 # create file paths to the abundance files using the 'file.path' function
@@ -1194,7 +1196,7 @@ pheatmap(Ot_sampleDistMatrix_ATAC,
 
 ##### Step 3: differential chromatin accessibility analysis ##########
 ### differential accessibility between the sexes ####
-### genitalia
+### genitalia 
 dds_G_ATAC <- DESeqDataSetFromMatrix(countData = G_filtered_counts_ATAC,
                                      colData = G_info_ATAC,
                                      design = ~ Sex)
@@ -1265,7 +1267,7 @@ OtE_sex_res_OCR<- as.data.frame(Ot_E_DA_resLFC, independentFiltering=FALSE)
 OtE_sex_res_OCR <- cbind(Ot_filtered_counts_norm[1:4], OtE_sex_res_OCR)
 OtE_sex_res_OCR_sig <- OtE_sex_res_OCR %>% filter(padj <= 0.1)
 
-### volcano plots ####
+### volcano plots of sex-responsive peaks ####
 cols <- c("F" = "#C1272D", "M" = "#2166AC", "ns" = "grey") 
 sizes <- c("F" = 2, "M" = 2, "ns" = 1) 
 alphas <- c("F" = 0.5, "M" = 0.5, "ns" = 1)
@@ -1378,12 +1380,13 @@ Ot_E_DA_vol_plot
 ggsave(Ot_E_DA_vol_plot, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/ATACseq/figures/Ot_E_DA_vol_plot.pdf",
        width = 4, height = 4)
 
-### clustered heatmap of differentially accessible peaks ####
+### clustered heatmap of sex-responsive peaks ####
 myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
 
 # genitalia 
 # subset count matrix by DEGs and trait for heatmap 
-Ot_G_DA_ocr <- inner_join(OtG_sex_res_sig, Ot_G_ocr_counts, by="peak")
+G_filtered_counts_ATAC <- cbind(Ot_filtered_counts_norm[1:4], G_filtered_counts_ATAC)
+Ot_G_DA_ocr <- inner_join(OtG_sex_res_OCR_sig, G_filtered_counts_ATAC, by="peak")
 
 clustRows <- hclust(as.dist(1-cor(t(Ot_G_DA_ocr[,14:23]), method="pearson")), method="complete")
 clustColumns <- hclust(as.dist(1-cor(Ot_G_DA_ocr[,14:23], method="spearman")), method="complete")
@@ -1398,7 +1401,8 @@ Ot_G_DA_heatmap <- heatmap.2(as.matrix(Ot_G_DA_ocr[,14:23]),
                              density.info="none", trace="none",)
 
 ### posterior head 
-Ot_PH_DA_ocr <- inner_join(OtPH_sex_res_sig, Ot_PH_ocr_counts, by="peak")
+PH_filtered_counts_ATAC <- cbind(Ot_filtered_counts_norm[1:4], PH_filtered_counts_ATAC)
+Ot_PH_DA_ocr <- inner_join(OtPH_sex_res_OCR_sig, PH_filtered_counts_ATAC, by="peak")
 
 clustRows <- hclust(as.dist(1-cor(t(Ot_PH_DA_ocr[,14:23]), method="pearson")), method="complete")
 clustColumns <- hclust(as.dist(1-cor(Ot_PH_DA_ocr[,14:23], method="spearman")), method="complete")
@@ -1413,14 +1417,15 @@ Ot_PH_DA_heatmap <- heatmap.2(as.matrix(Ot_PH_DA_ocr[,14:23]),
                               density.info="none", trace="none",)
 
 ### anterior head
-Ot_AH_DA_ocr <- inner_join(OtAH_sex_res_sig, Ot_AH_ocr_counts, by="peak")
+AH_filtered_counts_ATAC <- cbind(Ot_filtered_counts_norm[1:4], AH_filtered_counts_ATAC)
+Ot_AH_DA_ocr <- inner_join(OtAH_sex_res_OCR_sig, AH_filtered_counts_ATAC, by="peak")
 
-clustRows <- hclust(as.dist(1-cor(t(Ot_AH_DA_ocr[,15:24]), method="pearson")), method="complete")
-clustColumns <- hclust(as.dist(1-cor(Ot_AH_DA_ocr[,15:24], method="spearman")), method="complete")
+clustRows <- hclust(as.dist(1-cor(t(Ot_AH_DA_ocr[,14:23]), method="pearson")), method="complete")
+clustColumns <- hclust(as.dist(1-cor(Ot_AH_DA_ocr[,14:23], method="spearman")), method="complete")
 module.assign <- cutree(clustRows, k=2)
 module.color <- rainbow(length(unique(module.assign)), start=0.1, end=0.9) 
 module.color <- module.color[as.vector(module.assign)] 
-Ot_AH_DA_heatmap <- heatmap.2(as.matrix(Ot_AH_DA_ocr[,15:24]), 
+Ot_AH_DA_heatmap <- heatmap.2(as.matrix(Ot_AH_DA_ocr[,14:23]), 
                               Rowv=as.dendrogram(clustRows), 
                               Colv=as.dendrogram(clustColumns),
                               RowSideColors=module.color,
@@ -1428,9 +1433,9 @@ Ot_AH_DA_heatmap <- heatmap.2(as.matrix(Ot_AH_DA_ocr[,15:24]),
                               density.info="none", trace="none",)
 
 ### fore tibiae
-Ot_L_DA_ocr <- inner_join(OtL_sex_res_sig, Ot_L_ocr_counts, by="peak")
+L_filtered_counts_ATAC <- cbind(Ot_filtered_counts_norm[1:4], L_filtered_counts_ATAC)
+Ot_L_DA_ocr <- inner_join(OtL_sex_res_OCR_sig, L_filtered_counts_ATAC, by="peak")
 
-myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
 clustRows <- hclust(as.dist(1-cor(t(Ot_L_DA_ocr[,14:23]), method="pearson")), method="complete")
 clustColumns <- hclust(as.dist(1-cor(Ot_L_DA_ocr[,14:23], method="spearman")), method="complete")
 module.assign <- cutree(clustRows, k=2)
@@ -1444,9 +1449,9 @@ Ot_L_DA_heatmap <- heatmap.2(as.matrix(Ot_L_DA_ocr[,14:23]),
                              density.info="none", trace="none",)
 
 ### elytra
-Ot_E_DA_ocr <- inner_join(OtE_sex_res_sig, Ot_E_ocr_counts, by="peak")
+E_filtered_counts_ATAC <- cbind(Ot_filtered_counts_norm[1:4], E_filtered_counts_ATAC)
+Ot_E_DA_ocr <- inner_join(OtE_sex_res_OCR_sig, E_filtered_counts_ATAC, by="peak")
 
-myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
 clustRows <- hclust(as.dist(1-cor(t(Ot_E_DA_ocr[,14:23]), method="pearson")), method="complete")
 clustColumns <- hclust(as.dist(1-cor(Ot_E_DA_ocr[,14:23], method="spearman")), method="complete")
 module.assign <- cutree(clustRows, k=2)
@@ -1459,352 +1464,187 @@ Ot_E_DA_heatmap <- heatmap.2(as.matrix(Ot_E_DA_ocr[,14:23]),
                              col=myheatcolors, scale='row', labRow=NA,
                              density.info="none", trace="none",)
 
-### differential accessibility across traits #####
+### differential accessibility across traits ####
 dds_Ot<- DESeqDataSetFromMatrix(countData = Ot_filtered_counts_norm[5:54], 
                                 colData = Ot_info, design = ~Trait)
 dds_Ot<- DESeq(dds_Ot)
 
 # PH vs AH
 Ot_AHPH_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","AH","PH"), type="normal")
-tally(as.data.frame(Ot_AHPH_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 2895
-
 Ot_AHPH_shrunk <- as.data.frame(Ot_AHPH_DA_resLFC, independentFiltering=FALSE)
 Ot_AHPH_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_AHPH_shrunk)
 Ot_AHPH_sig <- Ot_AHPH_shrunk %>% filter(padj <= 0.1)
 
 # PH vs L
 Ot_LPH_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","L","PH"), type="normal")
-tally(as.data.frame(Ot_LPH_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 6264
-
 Ot_LPH_shrunk <- as.data.frame(Ot_LPH_DA_resLFC, independentFiltering=FALSE)
 Ot_LPH_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_LPH_shrunk)
 Ot_LPH_sig <- Ot_LPH_shrunk %>% filter(padj <= 0.1)
 
 # PH vs E
 Ot_EPH_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","E","PH"), type="normal")
-tally(as.data.frame(Ot_EPH_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 6705
-
 Ot_EPH_shrunk <- as.data.frame(Ot_EPH_DA_resLFC, independentFiltering=FALSE)
 Ot_EPH_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_EPH_shrunk)
 Ot_EPH_sig <- Ot_EPH_shrunk %>% filter(padj <= 0.1)
 
 # PH vs G
 Ot_GPH_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","G","PH"), type="normal")
-tally(as.data.frame(Ot_GPH_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 16375
-
 Ot_GPH_shrunk <- as.data.frame(Ot_GPH_DA_resLFC, independentFiltering=FALSE)
 Ot_GPH_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_GPH_shrunk)
 Ot_GPH_sig <- Ot_GPH_shrunk %>% filter(padj <= 0.1)
 
 # AH vs G
 Ot_GAH_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","G","AH"), type="normal")
-tally(as.data.frame(Ot_GAH_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 18677
-
 Ot_GAH_shrunk <- as.data.frame(Ot_GAH_DA_resLFC, independentFiltering=FALSE)
 Ot_GAH_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_GAH_shrunk)
 Ot_GAH_sig <- Ot_GAH_shrunk %>% filter(padj <= 0.1)
 
 # AH vs E
 Ot_EAH_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","E","AH"), type="normal")
-tally(as.data.frame(Ot_EAH_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 8846
-
 Ot_EAH_shrunk <- as.data.frame(Ot_EAH_DA_resLFC, independentFiltering=FALSE)
 Ot_EAH_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_EAH_shrunk)
 Ot_EAH_sig <- Ot_EAH_shrunk %>% filter(padj <= 0.1)
 
 # AH vs L
 Ot_LAH_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","L","AH"), type="normal")
-tally(as.data.frame(Ot_LAH_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 8824
-
 Ot_LAH_shrunk <- as.data.frame(Ot_LAH_DA_resLFC, independentFiltering=FALSE)
 Ot_LAH_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_LAH_shrunk)
 Ot_LAH_sig <- Ot_LAH_shrunk %>% filter(padj <= 0.1)
 
 # E vs L
 Ot_LE_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","L","E"), type="normal")
-tally(as.data.frame(Ot_LE_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 7980
-
 Ot_LE_shrunk <- as.data.frame(Ot_LE_DA_resLFC, independentFiltering=FALSE)
 Ot_LE_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_LE_shrunk)
 Ot_LE_sig <- Ot_LE_shrunk %>% filter(padj <= 0.1)
 
 # E vs G
 Ot_GE_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","G","E"), type="normal")
-tally(as.data.frame(Ot_GE_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 13155
-
 Ot_GE_shrunk <- as.data.frame(Ot_GE_DA_resLFC, independentFiltering=FALSE)
 Ot_GE_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_GE_shrunk)
 Ot_GE_sig <- Ot_GE_shrunk %>% filter(padj <= 0.1)
 
 # L vs G
 Ot_GL_DA_resLFC <- lfcShrink(dds_Ot, contrast=c("Trait","G","L"), type="normal")
-tally(as.data.frame(Ot_GL_DA_resLFC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 12467
-
 Ot_GL_shrunk <- as.data.frame(Ot_GL_DA_resLFC, independentFiltering=FALSE)
 Ot_GL_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_GL_shrunk)
 Ot_GL_sig <- Ot_GL_shrunk %>% filter(padj <= 0.1)
 
-#### #### #### #### #### #### #### #### #### #### #### #### 
-######## fully overlapping sex responsive OCRs ########
-Ot_sex_res_common <- OtPH_sex_res_sig %>% 
-  inner_join(OtAH_sex_res_sig, by = "peak") %>% 
-  inner_join(OtG_sex_res_sig, by = "peak") %>% 
-  inner_join(OtE_sex_res_sig, by = "peak") %>% 
-  inner_join(OtL_sex_res_sig, by = "peak") 
-Ot_sex_res_common <- Ot_sex_res_common[,c(1,2,3,4)]
-colnames(Ot_sex_res_common) <- c("chr","start","end", "peak") # only 6 peaks
-# when elytra removed, only 7 total
-
-#### #### #### #### #### #### #### #### #### #### #### #### 
-#### STEP 4 PEAK ANNOTATION - combine gene info with peak info ######
-####### pre-annotation steps #######
-
-#### read in genome transcript coordinates ######
+##### Step 4: annotate peaks with information on nearest genes ######
+#### read in genomic transcript coordinates ###
 Ot_transcript_coords <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau_transcript_coords.txt")
 # correct start and end positions for the negative strand transcripts
 Ot_transcript_starts <- Ot_transcript_coords %>% 
   mutate(start_correct = ifelse(orientation == "+", start, end),
          end_correct = ifelse(orientation == "+",end, start)) %>% 
   select(gene, chr, start_gene = start_correct, orientation)
-# now file is ready for all annotation uses
 
-#### read in annotated protein best hits ####
-Otau3_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau3_prot_hits_clean.txt")
-Otau3_prot_hits_clean$eval <- as.numeric(Otau3_prot_hits_clean$eval)
-Otau3_prot_hits_best <- Otau3_prot_hits_clean %>% 
-  group_by(OT3_ID) %>% 
-  top_n(-1,eval) %>% 
-  dplyr::slice(which.max(pident))
-
-# combine with annotations from Otau2 genome
-Otau2_prot_names <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau2_prot_names.txt")
-Otau3_prot_anno <- left_join(Otau3_prot_hits_best, Otau2_prot_names)
-colnames(Otau3_prot_anno)<- c("OT3_ID", "OT2_ID", "pident", "eval", "OT2_description")
-
-#### OtAH_sex_res #### 
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtAH_sex_anno_all <- OtAH_sex_res_shrunk %>% 
+### anterior head ####
+# denote which condition showed higher accessibility
+OtAH_sex_res_OCR <- OtAH_sex_res_OCR %>% 
   mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
                      ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+                            "ns")))
 
-OtAH_sex_res_sig_anno <- OtAH_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+OtAH_OCR_sig_location  <- OtAH_sex_res_OCR %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-OtAH_sex_peaks <- OtAH_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# combine gene info with peak info 
-OtAH_sex_peak_gene_map <- 
-  left_join(OtAH_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes
+OtAH_DA_peak_gene_map <- 
+  left_join(OtAH_OCR_sig_location, Ot_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("gene"="OT3_ID") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-OtAH_sex_peak_gene_map_anno <- left_join(OtAH_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtAH_F_peak_map_anno <- OtAH_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtAH_M_peak_map_anno <- OtAH_sex_peak_gene_map_anno %>% filter(DA == "M")
-#### OtE_sex_res #### 
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtE_sex_anno_all <- OtE_sex_res_shrunk %>% 
+# combine peak-gene map with protein annotations
+OtAH_DA_peak_gene_map_anno <- left_join(OtAH_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+OtAH_F_peak_map_anno <- OtAH_DA_peak_gene_map_anno %>% filter(DA == "F")
+OtAH_M_peak_map_anno <- OtAH_DA_peak_gene_map_anno %>% filter(DA == "M")
+
+### posterior head ####
+OtPH_sex_res_OCR <- OtPH_sex_res_OCR %>% 
   mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
                      ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+                            "ns")))
 
-OtE_sex_res_sig_anno <- OtE_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+OtPH_OCR_sig_location  <- OtPH_sex_res_OCR %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-OtE_sex_peaks <- OtE_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# combine gene info with peak info 
-OtE_sex_peak_gene_map <- 
-  left_join(OtE_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes
+OtPH_DA_peak_gene_map <- 
+  left_join(OtPH_OCR_sig_location, Ot_transcript_starts, by = "chr") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
-  filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("gene"="OT3_ID") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  filter(abs(peakGeneDist) <= 25000) %>% 
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) 
 
-# combine with protein best hits
-OtE_sex_peak_gene_map_anno <- left_join(OtE_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtE_F_peak_map_anno <- OtE_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtE_M_peak_map_anno <- OtE_sex_peak_gene_map_anno %>% filter(DA == "M")
+# add protein annotations
+OtPH_DA_peak_gene_map_anno <- left_join(OtPH_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+OtPH_F_peak_map_anno <- OtPH_DA_peak_gene_map_anno %>% filter(DA == "F")
+OtPH_M_peak_map_anno <- OtPH_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-#### OtG_sex_res ######
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtG_sex_anno_all <- OtG_sex_res_shrunk %>% 
+### genitalia ####
+OtG_sex_res_OCR <- OtG_sex_res_OCR %>% 
   mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
                      ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+                            "ns")))
 
-OtG_sex_res_sig_anno <- OtG_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+OtG_OCR_sig_location  <- OtG_sex_res_OCR %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-OtG_sex_peaks <- OtG_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# combine gene info with peak info 
-OtG_sex_peak_gene_map <- 
-  left_join(OtG_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# map peaks to nearby genes
+OtG_DA_peak_gene_map <- 
+  left_join(OtG_OCR_sig_location, Ot_transcript_starts, by = "chr") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
-  filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("gene"="OT3_ID") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  filter(abs(peakGeneDist) <= 25000) %>% 
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) 
 
-# combine with protein best hits
-OtG_sex_peak_gene_map_anno <- left_join(OtG_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtG_F_peak_map_anno <- OtG_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtG_M_peak_map_anno <- OtG_sex_peak_gene_map_anno %>% filter(DA == "M")
+# add protein annotations
+OtG_DA_peak_gene_map_anno <- left_join(OtG_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+OtG_F_peak_map_anno <- OtG_DA_peak_gene_map_anno %>% filter(DA == "F")
+OtG_M_peak_map_anno <- OtG_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-##### OtL_sex_res #####
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtL_sex_anno_all <- OtL_sex_res_shrunk %>% 
+### fore tibia ####
+OtL_sex_res_OCR <- OtL_sex_res_OCR %>% 
   mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
                      ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+                            "ns")))
 
-OtL_sex_res_sig_anno <- OtL_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+OtL_OCR_sig_location  <- OtL_sex_res_OCR %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-OtL_sex_peaks <- OtL_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# combine gene info with peak info 
-OtL_sex_peak_gene_map <- 
-  left_join(OtL_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# map peaks to nearby genes
+OtL_DA_peak_gene_map <- 
+  left_join(OtL_OCR_sig_location, Ot_transcript_starts, by = "chr") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
-  filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("gene"="OT3_ID") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  filter(abs(peakGeneDist) <= 25000) %>% 
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) 
 
-# combine with protein best hits
-OtL_sex_peak_gene_map_anno <- left_join(OtL_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtL_F_peak_map_anno <- OtL_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtL_M_peak_map_anno <- OtL_sex_peak_gene_map_anno %>% filter(DA == "M")
+# add protein annotations
+OtL_DA_peak_gene_map_anno <- left_join(OtL_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+OtL_F_peak_map_anno <- OtL_DA_peak_gene_map_anno %>% filter(DA == "F")
+OtL_M_peak_map_anno <- OtL_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-##### OtPH_sex_res #####
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtPH_sex_anno_all <- OtPH_sex_res_shrunk %>% 
+### elytra ####
+OtE_sex_res_OCR <- OtE_sex_res_OCR %>% 
   mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
                      ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+                            "ns")))
 
-OtPH_sex_res_sig_anno <- OtPH_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "notDA")))
+OtE_OCR_sig_location  <- OtE_sex_res_OCR %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-OtPH_sex_peaks <- OtPH_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# combine gene info with peak info 
-OtPH_sex_peak_gene_map <- 
-  left_join(OtPH_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# map peaks to nearby genes
+OtE_DA_peak_gene_map <- 
+  left_join(OtE_OCR_sig_location, Ot_transcript_starts, by = "chr") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
-  filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("gene"="OT3_ID") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  filter(abs(peakGeneDist) <= 25000) %>% 
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) 
 
-# combine with protein best hits
-OtPH_sex_peak_gene_map_anno <- left_join(OtPH_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtPH_F_peak_map_anno <- OtPH_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtPH_M_peak_map_anno <- OtPH_sex_peak_gene_map_anno %>% filter(DA == "M")
+# add protein annotations
+OtE_DA_peak_gene_map_anno <- left_join(OtE_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+OtE_F_peak_map_anno <- OtE_DA_peak_gene_map_anno %>% filter(DA == "F")
+OtE_M_peak_map_anno <- OtE_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-
-###### Ot_sex_res_common #####
-Ot_sex_res_common <- Ot_sex_res_common %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, start, mid, end)
-
-# combine gene info with peak info 
-Ot_sex_res_common_gene_map <- 
-  left_join(Ot_sex_res_common, Ot_transcript_starts, by = "chr") %>% 
-  mutate(peakGeneDist = mid-start_gene) %>% 
-  filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  rename("gene"="OT3_ID") %>% 
-  group_by(peak) %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
-
-# combine with Otau3 protein best hits
-Ot_sex_res_common_gene_map_anno <- left_join(Ot_sex_res_common_gene_map, Otau3_prot_anno, by = "OT3_ID")
-
-Ot_sex_res_common_clean <- select(Ot_sex_res_common_gene_map_anno, peak, chr, OT3_ID, orientation, peakGeneDist, pident, OT2_description)
-
-write.table(Ot_sex_res_common_clean, 
-            file = "./GitHub/Beetle-sexual-dimorphism/Ot_sex_res_common_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-########### COMPARE OVERLAPPING PEAK SETS from different traits #######
-Ot_sex_PHAH_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtAH_sex_peaks, by = "peak") # 24
-Ot_sex_PHG_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtG_sex_peaks, by = "peak") # 53
-Ot_sex_PHE_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtE_sex_peaks, by = "peak") # 50
-Ot_sex_PHL_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 138
-Ot_sex_AHL_peak_overlap <- OtAH_sex_peaks %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 21
-Ot_sex_AHE_peak_overlap <- OtAH_sex_peaks %>% 
-  inner_join(OtE_sex_peaks, by = "peak") # 21
-Ot_sex_AHG_peak_overlap <- OtAH_sex_peaks %>% 
-  inner_join(OtG_sex_peaks, by = "peak") # 9
-Ot_sex_GE_peak_overlap <- OtG_sex_peaks %>% 
-  inner_join(OtE_sex_peaks, by = "peak") # 24
-Ot_sex_GL_peak_overlap <- OtG_sex_peaks %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 25
-Ot_sex_EL_peak_overlap <- OtE_sex_peaks %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 44
-# triplets
-Ot_sex_PHAHG_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtAH_sex_peaks, by = "peak") %>% 
-  inner_join(OtG_sex_peaks, by = "peak") # 9
-Ot_sex_PHAHE_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtAH_sex_peaks, by = "peak") %>% 
-  inner_join(OtE_sex_peaks, by = "peak") # 21
-Ot_sex_PHAHL_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtAH_sex_peaks, by = "peak") %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 21
-Ot_sex_AHGE_peak_overlap <- OtAH_sex_peaks %>% 
-  inner_join(OtG_sex_peaks, by = "peak") %>% 
-  inner_join(OtE_sex_peaks, by = "peak") # 8
-Ot_sex_AHGL_peak_overlap <- OtAH_sex_peaks %>% 
-  inner_join(OtG_sex_peaks, by = "peak") %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 7
-Ot_sex_GEL_peak_overlap <- OtE_sex_peaks %>% 
-  inner_join(OtG_sex_peaks, by = "peak") %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 17
-# quads
-Ot_sex_PHAHGE_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtAH_sex_peaks, by = "peak") %>% 
-  inner_join(OtG_sex_peaks, by = "peak")  %>% 
-  inner_join(OtE_sex_peaks, by = "peak") # 8
-Ot_sex_PHAHGL_peak_overlap <- OtPH_sex_peaks %>% 
-  inner_join(OtAH_sex_peaks, by = "peak") %>% 
-  inner_join(OtG_sex_peaks, by = "peak")  %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 7
-Ot_sex_AHGEL_peak_overlap <- OtE_sex_peaks %>% 
-  inner_join(OtAH_sex_peaks, by = "peak") %>% 
-  inner_join(OtG_sex_peaks, by = "peak")  %>% 
-  inner_join(OtL_sex_peaks, by = "peak") # 6
-# Ot_sex_res_common = 6 peaks
-
-#### STEP 5 PLOTTING CUMULATIVELY #####
-### bar charts plotting ####
+##### Step 5: plot bar chart of sex-responsive OCRs across traits ####
 sex <- c('F', 'M','F', 'M','F', 'M','F', 'M','F', 'M') 
 trait <- c('PH', 'PH','G','G','L','L','AH','AH','E','E')
 DA_peaks <- c(1237,1913,236,842,58,176,7,21,22,47)
@@ -1827,96 +1667,55 @@ Ot_bar_DA
 ggsave(Ot_bar_DA, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/ATACseq/figures/Ot_bar_DA.pdf",
        width = 6, height = 3)
 
-#### venn diagrams plotted using InteractiVenn online tool #####
-#### STEP 6 comparing DEG overlap against genes with nearby DA OCRs######
-# does it make more sense to compare more accessible peaks to upreg genes in each sex?
-# or does it make more sense to compare any DA peak per trait to any DEG in either sex?
-
-# from Davidson et al 2024: genes with nearby sex-responsive OCRs more frequently exhibit differential mRNA expression sexes than genes lacking sex-responsive OCRs, though this association is not supported at a genome-wide scale (chi-square test: p = 0.15).
-
-# left join DEGs with DA peaks 
-
-# read in DEG files 
-Ot_AH_MvF_gene <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/RNAseq/Ot_AH_MvF_pval.txt")
-Ot_AH_MvF_gene %>%
-  dplyr::count(upreg)
-# NA = if a row is filtered by automatic independent filtering for having a low mean normalized count, then the adjusted p value will be set to NA
-
-Ot_AH_MvF_deg <- filter(Ot_AH_MvF_gene, upreg=='F'| upreg=='M')
-Ot_AH_ns <- filter(Ot_AH_MvF_gene, upreg=='ns')
-
-Ot_PH_MvF_gene <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/RNAseq/Ot_PH_MvF_pval.txt")
-Ot_PH_MvF_deg <- filter(Ot_PH_MvF_gene, upreg=='F'| upreg=='M')
-Ot_PH_ns <- filter(Ot_PH_MvF_gene, upreg=='ns')
-
-Ot_G_MvF_gene <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/RNAseq/Ot_G_MvF_pval.txt")
-Ot_G_MvF_deg <- filter(Ot_G_MvF_gene, upreg=='F'| upreg=='M')
-Ot_G_ns <- filter(Ot_G_MvF_gene, upreg=='ns')
-
-Ot_L_MvF_gene <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/RNAseq/Ot_L_MvF_pval.txt")
-Ot_L_MvF_deg <- filter(Ot_L_MvF_gene, upreg=='F'| upreg=='M')
-Ot_L_ns <- filter(Ot_L_MvF_gene, upreg=='ns')
-
-Ot_E_MvF_gene <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/RNAseq/Ot_E_MvF_pval.txt")
-Ot_E_MvF_deg <- filter(Ot_E_MvF_gene, upreg=='F'| upreg=='M')
-Ot_E_ns <- filter(Ot_E_MvF_gene, upreg=='ns')
-
-# all posterior head
-# PH_gene_peak_overlap <- OtPH_sex_peak_gene_map_anno = 2 closest genes per DA peak
-# Ot_PH_MvF_deg =  all DE genes
-
-OtPH_sex_peak_gene_map_anno <- rename(OtPH_sex_peak_gene_map_anno, "OT3_ID"="gene")
-PH_gene_peak_overlap <- left_join(Ot_PH_MvF_deg, OtPH_sex_peak_gene_map_anno, by = "gene")
-PH_gene_peak_overlap %>%
-  dplyr::count(DA) #22 near DA peak, 1712 not
-22/1712 # 1.28 %
-
-PH_nonDE_peak_overlap <- left_join(Ot_PH_ns, OtPH_sex_peak_gene_map_anno, by = "gene")
-PH_nonDE_peak_overlap %>%
-  dplyr::count(DA) #225 near DA peak, 10811 not
-225/10811 # 2.08 %
-
-# all anterior head
-OtAH_sex_peak_gene_map_anno <- rename(OtAH_sex_peak_gene_map_anno, "OT3_ID"="gene")
-AH_gene_peak_overlap <- left_join(Ot_AH_MvF_deg, OtAH_sex_peak_gene_map_anno, by = "gene")
-AH_gene_peak_overlap %>%
-  dplyr::count(DA) #0 near DA peak, 1954 not
-
-
-#### STEP 7 annotate peaks within 20kb of doublesex ######
-## dsx start & end coordinates = 7503131	7570866
-
+##### STEP 7: assess peaks near doublesex ######
+## dsx start & end coordinates = Scaffold 7, 7503131, 7570866
 # create list of all peaks near dsx (within 25kb up or downstream)
 near_dsx <- Ot_counts_5 %>% 
   select(1:4) %>% 
   filter(chr == "Scaffold7") %>% 
   filter(start > 7478131 & start < 7595866)
 
-head(near_dsx)
-
-# filter list by trait_res
+# filter by list of trait_responsive peaks
 trait_res_list <- read.delim("/Users/ericanadolski/GitHub/Beetle-sexual-dimorphism/peak-sets/Otau-sig/trait_res_sorted.txt", col.names = c("peak"))
-
 trait_res_near_dsx <- inner_join(trait_res_list, near_dsx, by = "peak")
 nrow(trait_res_near_dsx)
 
-# filter list by sex_res
+# filter by list of sex_responsive peaks
 sex_res_list <- read.delim("/Users/ericanadolski/GitHub/Beetle-sexual-dimorphism/peak-sets/Otau-sig/sex_res_sorted.txt", col.names = c("peak"))
-
 sex_res_near_dsx <- inner_join(sex_res_list, near_dsx, by = "peak")
 nrow(sex_res_near_dsx)
 
-
-
-#### STEP 8 EXPORT significant peak tables ######
-## all sex responsive peaks per body region
+##### STEP 8: EXPORT significant peak tables ######
+### export sex-responsive peaks sets ####
 write.table(OtPH_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtPH_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(OtAH_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtAH_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(OtL_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtL_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(OtG_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtG_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(OtE_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtE_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 
-# export separate peak bed files for motif enrichments
+### export sex-responsive peak sets annotated with closest genes ####
+write.table(OtAH_F_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtAH_M_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtE_F_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtE_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtE_M_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtE_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtG_F_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtG_M_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtL_F_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtL_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtL_M_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtL_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtPH_F_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(OtPH_M_peak_map_anno, 
+            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_M_peak_map_anno.txt",sep = "\t", quote = FALSE, row.names = FALSE)
+
+# export sex-specific OCR lists - bed file for motif enrichments
 OtPH_peaks_M_up <- filter(OtPH_sex_res_sig_anno, DA =="M")
 OtPH_peaks_F_up <- filter(OtPH_sex_res_sig_anno, DA =="F")
 OtAH_peaks_M_up <- filter(OtAH_sex_res_sig_anno, DA =="M")
@@ -1939,7 +1738,7 @@ write.table(OtG_peaks_F_up, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/
 write.table(OtE_peaks_M_up, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtE_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(OtE_peaks_F_up, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtE_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 
-## all trait-responsive peaks
+### export all trait-responsive peak sets ####
 write.table(Ot_AHPH_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/Ot_AHPH_sig.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(Ot_EPH_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/Ot_EPH_sig.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(Ot_LPH_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/Ot_LPH_sig.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
@@ -1950,36 +1749,3 @@ write.table(Ot_LAH_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/Ot_L
 write.table(Ot_LE_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/Ot_LE_sig.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(Ot_GE_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/Ot_GE_sig.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(Ot_GL_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/Ot_GL_sig.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
-
-#### export annotated significant peak tables ######
-write.table(OtAH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_sex_peak_gene_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtAH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtAH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtE_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtE_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtE_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtE_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtE_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtE_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtG_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_sex_peak_gene_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtG_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtG_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtL_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtL_sex_peak_gene_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtL_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtL_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtL_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtL_M_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtPH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_sex_peak_gene_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtPH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_F_peak_map_anno.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtPH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_M_peak_map_anno.txt",sep = "\t", quote = FALSE, row.names = FALSE)
