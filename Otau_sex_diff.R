@@ -18,7 +18,7 @@ Ot_sample_table <- read.delim("/Users/ericanadolski/GitHub/Otaurus_sexual_dimorp
 Ot_sample_table <- Ot_sample_table %>% mutate(Sex_Trait = paste0(Sex, "_", Trait)) 
 
 # create file paths to the abundance files using the 'file.path' function
-path <- file.path("/Volumes/T7_Drive_2/RNAseq/salmon-dsx", paste0(Ot_sample_table$Sample, "_quant/quant.sf")) 
+path <- file.path("/Users/ericanadolski/GitHub/salmon-dsx", paste0(Ot_sample_table$Sample, "_quant/quant.sf")) 
 file.exists(path)
 
 # import counts with tximport
