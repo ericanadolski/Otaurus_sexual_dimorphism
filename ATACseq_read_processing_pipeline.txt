@@ -2,6 +2,8 @@
 1. quality control - FastQC
 #######################
 
+module load fastqc/0.11.9
+
 for i in *fastq.gz; do 
 	fastqc $i --noextract --outdir /Volumes/T7_Drive_1/ATACseq/fastqc_out; 
 done
@@ -10,7 +12,7 @@ done
 2. trim reads - Trimmomatic
 #######################
 
-module load trimmomatic
+module load trimmomatic/0.36
 
 mkdir trimmed-ATAC
 
