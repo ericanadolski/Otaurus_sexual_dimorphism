@@ -4,7 +4,6 @@ library(tximport)
 library(DESeq2)
 library(ggplot2)
 library(pheatmap)
-library
 library(edgeR)
 library(stats)
 library(topGO)
@@ -248,7 +247,7 @@ tally(as.data.frame(results(Ot_dds_shrink, contrast=c("group","ML","FL"))) %>% f
 tally(as.data.frame(results(Ot_dds_shrink, contrast=c("group","ME","FE"))) %>% filter(padj <= 0.1)) 
 # 1204
 
-### save results of each comparison as a dataframe #####
+### save results in dataframe #####
 # posterior head
 Ot_PH_MvF_gene <- as.data.frame(results(Ot_dds_shrink, contrast=c("group","MPH","FPH")))
 Ot_PH_MvF_gene <- rownames_to_column(Ot_PH_MvF_gene)
@@ -918,7 +917,7 @@ colnames(Otau3_prot_anno)<- c("gene", "OT2_ID", "pident", "eval", "OT2_descripti
 # go terms dataframe has Protein.names annotation
 uniprot_anno <- go_terms_full %>% dplyr::select(gene, Protein.names, Organism)
 
-#####Step 7: annotate and export trait-specific DEG tables ####
+##### Step 7: annotate and export trait-specific DEG tables ####
 deg_Ot_PH_MvF_anno <- join_all(list(Ot_PH_MvF_deg, uniprot_anno, Otau3_prot_anno), by='gene', type='left')
 write.table(deg_Ot_PH_MvF_anno, 
             file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/RNAseq/Ot_PH_MvF_deg.txt", sep = "\t", quote = FALSE, row.names = FALSE)
@@ -940,7 +939,7 @@ write.table(deg_Ot_G_MvF_anno,
             file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/RNAseq/Ot_G_MvF_deg.txt",
             sep = "\t", quote = FALSE, row.names = FALSE)
 
-########## Step 8: plotting doublesex expression levels #####
+##### Step 8: plotting doublesex expression levels #####
 ### plotting counts per million using'cpm' function from EdgeR
 # make the DGEList
 Ot_eds_r <- DGEList(Ot_counts)
@@ -967,7 +966,7 @@ dsx_plot <- ggplot(Ot_dsx_long) +
 ggsave(dsx_plot, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/figures/dsx_expression.pdf",
        width = 5, height = 4)
 
-### Step 9: plotting ventral veinless expression levels #####
+##### Step 9: plotting ventral veinless expression levels #####
 #### EdgeR 'cpm' function to get counts per million
 Ot_vvl <- as.data.frame(Ot_cpm["jg3443.t1",])
 Ot_vvl$Sex_Trait <- Ot_sample_table$Sex_Trait
@@ -1194,7 +1193,7 @@ pheatmap(Ot_sampleDistMatrix_ATAC,
          clustering_distance_cols=Ot_sampleDists_ATAC,
          col=colors)
 
-##### Step 3: differential chromatin accessibility analysis ##########
+##### Step 4: differential chromatin accessibility analysis ##########
 ### differential accessibility between the sexes ####
 ### genitalia 
 dds_G_ATAC <- DESeqDataSetFromMatrix(countData = G_filtered_counts_ATAC,
@@ -1529,7 +1528,7 @@ Ot_GL_shrunk <- as.data.frame(Ot_GL_DA_resLFC, independentFiltering=FALSE)
 Ot_GL_shrunk <- cbind(Ot_filtered_counts_norm[1:4], Ot_GL_shrunk)
 Ot_GL_sig <- Ot_GL_shrunk %>% filter(padj <= 0.1)
 
-##### Step 4: annotate peaks with information on nearest genes ######
+##### Step 5: annotate peaks with information on nearest genes ######
 #### read in genomic transcript coordinates ###
 Ot_transcript_coords <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau_transcript_coords.txt")
 # correct start and end positions for the negative strand transcripts
@@ -1644,7 +1643,7 @@ OtE_DA_peak_gene_map_anno <- left_join(OtE_DA_peak_gene_map, Otau3_prot_anno, by
 OtE_F_peak_map_anno <- OtE_DA_peak_gene_map_anno %>% filter(DA == "F")
 OtE_M_peak_map_anno <- OtE_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-##### Step 5: plot bar chart of sex-responsive OCRs across traits ####
+##### Step 6: plot bar chart of sex-responsive OCRs across traits ####
 sex <- c('F', 'M','F', 'M','F', 'M','F', 'M','F', 'M') 
 trait <- c('PH', 'PH','G','G','L','L','AH','AH','E','E')
 DA_peaks <- c(1237,1913,236,842,58,176,7,21,22,47)
@@ -1667,7 +1666,7 @@ Ot_bar_DA
 ggsave(Ot_bar_DA, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/ATACseq/figures/Ot_bar_DA.pdf",
        width = 6, height = 3)
 
-##### STEP 7: assess peaks near doublesex ######
+##### Step 8: assess peaks near doublesex ######
 ## dsx start & end coordinates = Scaffold 7, 7503131, 7570866
 # create list of all peaks near dsx (within 25kb up or downstream)
 near_dsx <- Ot_counts_5 %>% 
@@ -1685,7 +1684,7 @@ sex_res_list <- read.delim("/Users/ericanadolski/GitHub/Beetle-sexual-dimorphism
 sex_res_near_dsx <- inner_join(sex_res_list, near_dsx, by = "peak")
 nrow(sex_res_near_dsx)
 
-##### STEP 8: EXPORT significant peak tables ######
+##### Step 9: export significant peak tables ######
 ### export sex-responsive peaks sets ####
 write.table(OtPH_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtPH_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(OtAH_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtAH_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
