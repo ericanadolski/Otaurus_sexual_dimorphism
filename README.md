@@ -32,33 +32,23 @@ DATA & FILE OVERVIEW
 
 File List:
 ATACseq_read_processing_pipeline.txt
-
 Ot_allpeaks.bed
-
 Ot_peak_counts.txt
-
 Ot_salmon_counts.txt
-
 Ot_sample_info_ATAC.txt
-
 Ot_sample_info_RNA.txt
-
 Otau2_prot_annotations.txt
-
 Otau_sex_diff.R
-
 RNAseq_read_processing_pipeline.txt
-
 geneID2GO.txt
-
 salmon-dsx-quant.tar.gz
 
 Relationship between files:
 Otau_sex_diff.R to be used with Ot_peak_counts.txt, Ot_sample_info_ATAC.txt, Ot_sample_info_RNA.txt, Otau2_prot_annotations.txt, geneID2GO.txt, and salmon-dsx-quant.tar.gz
 
-ATACseq_read_processing_pipeline.txt to be used with 
+ATACseq_read_processing_pipeline.txt to be used with data stored here: http://ncbi.nlm.nih.gov/bioproject/PRJNA1425599
 
-RNAseq_read_processing_pipeline.txt
+RNAseq_read_processing_pipeline.txt to be used with data stored here:https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1425507
 
 Additional related data collected that was not included in the current data package: N/A
 
@@ -70,57 +60,35 @@ Methods for processing the data: See manuscript.
 
 Software-specific information needed to interpret the data:
 fastqc (v0.11.9)
-
 trimmomatic (v0.36)
-
 salmon (v1.10.1)
-
 python (v3.10.5)
-
 bowtie2 (v2.5.1)
-
 macs (v2.2.9.1)
-
 samtools (v1.17)
-
 bedtools (v2.31.0)
-
 R (v4.2.2)
-
 RStudio (v2022.12.0+353)
-
 BiocManager (v1.30.22)
-
 tximport (v1.34.0)
-
 DESeq2 (v1.38.3)
-
 edgeR (v3.40.2)
-
 RColorBrewer (v1.1-3)
-
 tidyverse (v2.0.0)
-
 ggplot2 (v3.5.2)
-
 pheatmap (v1.0.12)
-
 gplots (v3.2.0)
-
 topGo (v2.58.0)
 
 Standards and calibration information, if appropriate: N/A
 
 Environmental/experimental conditions: See manuscript.
 
-Describe any quality-assurance procedures performed on the data: N/A
+Describe any quality-assurance procedures performed on the data: See manuscript.
 
 People involved with sample collection, processing, analysis and/or submission:
-
 Phillip L. Davidson - sample rearing and collection
-
 Yongsoo Choi - sample rearing
-
 Miranda Towse - sample rearing
 
 DATA-SPECIFIC INFORMATION FOR: Ot_sample_info_RNA.txt
@@ -173,7 +141,7 @@ Missing data codes: N/A
 
 Specialized formats or other abbreviations used: N/A
 
-DATA-SPECIFIC INFORMATION FOR: Otau2_prot_annotations.txt
+DATA-SPECIFIC INFORMATION FOR: geneID2GO.txt
 
 Number of variables: 2
 
@@ -187,7 +155,7 @@ Missing data codes: N/A
 
 Specialized formats or other abbreviations used: N/A
 
-DATA-SPECIFIC INFORMATION FOR: geneID2GO.txt
+DATA-SPECIFIC INFORMATION FOR: Otau2_prot_annotations.txt
 
 Number of variables: 5
 
@@ -204,8 +172,49 @@ Missing data codes: N/A
 
 Specialized formats or other abbreviations used: N/A
 
-DATA-SPECIFIC INFORMATION FOR: xxx.txt
+DATA-SPECIFIC INFORMATION FOR: Ot_allpeaks.bed
 
-Missing data codes: Missing data represented by NAs and blank cells.
+Number of variables: 4
+
+Number of cases/rows: 175885
+
+Variable List:
+Scaffold - scaffold (chromosome) ID.
+start - base pair locus of peak start.
+end - base pair locus of peak end.
+peak - unique peak ID.
+
+Missing data codes: N/A
+
+Specialized formats or other abbreviations used: N/A
+
+DATA-SPECIFIC INFORMATION FOR: Ot_peak_counts.txt
+
+Number of variables: 54
+
+Number of cases/rows: 175885
+
+Variable List:
+chr - scaffold (chromosome) ID.
+start - base pair locus of peak start.
+end - base pair locus of peak end.
+peak - unique peak ID.
+columns 5-54 - mapped reads within each unique sample library.
+
+Missing data codes: N/A
+
+Specialized formats or other abbreviations used: N/A
+
+DATA-SPECIFIC INFORMATION FOR: Ot_salmon_counts.txt
+
+Number of variables: 61
+
+Number of cases/rows: 19502
+
+Variable List:
+gene - unique gene ID.
+columns 2-61 - mapped reads within each unique sample library.
+
+Missing data codes: N/A
 
 Specialized formats or other abbreviations used: N/A

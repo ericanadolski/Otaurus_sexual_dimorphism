@@ -3,7 +3,7 @@ library(tidyverse)
 library(tximport)
 library(DESeq2)
 library(ggplot2)
-library(pheatmap)
+library(gplots)
 library(edgeR)
 library(stats)
 library(topGO)
@@ -71,7 +71,7 @@ summary(PCA_Ot_RNA)
 
 Ot_PCA <- ggplot(data = PCs_Ot_RNA, aes(x = PC1, y = PC2, color = Sex, shape=Trait)) + 
   geom_point(size = 3) +
-  scale_fill_manual(values=c("#F8766D", "#4393C3")) + 
+  scale_fill_manual(values=c("#C1272D","#2166AC")) + 
   scale_shape_manual(values = c(17, 3, 15, 18, 16)) +
   geom_text(aes(label = Replicate), nudge_y = 3) +
   labs(title="O. taurus RNA-seq Samples - Salmon",x = "PC1 (22.5%)", y = "PC2 (11.6%)") +
@@ -1041,7 +1041,6 @@ Ot_PCA_ATAC <- ggplot(data = PCs_Ot_ATAC,
   geom_point(size = 3) +
   scale_fill_manual(values=c("#C1272D", "#2166AC")) + 
   scale_shape_manual(values = c(17, 3, 15, 18, 16)) +
-  geom_text(aes(label = Replicate), nudge_y = 10) +
   labs(title="O. taurus ATAC-seq OCRs",x = "PC1 (28.3%)", y = "PC2 (12.2%)") +
   theme_bw()
 
@@ -1078,7 +1077,7 @@ ggsave(PCA_G_ATAC, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_proj
 
 ### PCA posterior head ####
 PH_info_ATAC <- filter(Ot_info_ATAC, Trait == "PH")
-PH_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% select(contains("PH")) 
+PH_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% dplyr::select(contains("PH")) 
 
 dds_PH_ATAC <- DESeqDataSetFromMatrix(countData = PH_filtered_counts_ATAC,
                                     colData = PH_info_ATAC,
@@ -1155,7 +1154,7 @@ PCA_L_ATAC <- ggplot(data = PCs_L_ATAC,
 ggsave(PCA_L_ATAC, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/ATACseq/figures/PCA_L_ATAC.pdf",
        width = 4.30, height = 3.77)
 
-### PCA posterior head ####
+### PCA elytra ####
 E_info_ATAC <- filter(Ot_info_ATAC, Trait == "E")
 E_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% select(contains("_E")) 
 
@@ -1386,6 +1385,7 @@ myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
 # subset count matrix by DEGs and trait for heatmap 
 G_filtered_counts_ATAC <- cbind(Ot_filtered_counts_norm[1:4], G_filtered_counts_ATAC)
 Ot_G_DA_ocr <- inner_join(OtG_sex_res_OCR_sig, G_filtered_counts_ATAC, by="peak")
+nrow(G_filtered_counts_ATAC)
 
 clustRows <- hclust(as.dist(1-cor(t(Ot_G_DA_ocr[,14:23]), method="pearson")), method="complete")
 clustColumns <- hclust(as.dist(1-cor(Ot_G_DA_ocr[,14:23], method="spearman")), method="complete")
