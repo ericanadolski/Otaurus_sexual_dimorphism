@@ -13,11 +13,11 @@ library(RColorBrewer)
 ##### Step 1: import RNAseq read abundance from salmon #####
 # read in study design
 Ot_sample_table <- read.delim("/Users/ericanadolski/GitHub/Otaurus_sexual_dimorphism/Ot_sample_info_RNA.txt") 
-#Ot F11 E removed from Ot_sample_info2.txt
+#Ot F11 E removed from Ot_sample_info_RNA.txt
 Ot_sample_table <- Ot_sample_table %>% mutate(Sex_Trait = paste0(Sex, "_", Trait)) 
 
 # create file paths to the abundance files using the 'file.path' function
-path <- file.path("/Users/ericanadolski/GitHub/salmon-dsx", paste0(Ot_sample_table$Sample, "_quant/quant.sf")) 
+path <- file.path("/Volumes/T7_Drive_2/RNAseq/salmon-dsx", paste0(Ot_sample_table$Sample, "_quant/quant.sf")) 
 file.exists(path)
 
 # import counts with tximport
@@ -897,7 +897,6 @@ E_F_all_res$weightFisher <- as.numeric(E_F_all_res$weightFisher)
 E_F_results.table.p= E_F_all_res[which(E_F_all_res$weightFisher<=0.001),]
 dim(E_F_results.table.p) # 8 
 
-############################# STEP 8 - EXTRA DATA PLOTS
 ##### Step 6: get gene annotations via UniProt best hits #######
 ### Otau3 blast best hits to Otau2 
 Otau3_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau3_prot_hits_clean.txt")
@@ -1049,7 +1048,7 @@ ggsave(Ot_PCA_ATAC, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_pro
 
 ### PCA genitalia ####
 G_info_ATAC <- filter(Ot_info_ATAC, Trait == "G")
-G_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% select(contains("G")) 
+G_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% dplyr::select(contains("G")) 
 
 dds_G_ATAC <- DESeqDataSetFromMatrix(countData = G_filtered_counts_ATAC,
                                      colData = G_info_ATAC,
@@ -1103,7 +1102,7 @@ ggsave(PCA_PH_ATAC, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_pro
 
 ### PCA anterior head ####
 AH_info_ATAC <- filter(Ot_info_ATAC, Trait == "AH")
-AH_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% select(contains("AH")) 
+AH_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% dplyr::select(contains("AH")) 
 
 dds_AH_ATAC <- DESeqDataSetFromMatrix(countData = AH_filtered_counts_ATAC,
                                       colData = AH_info_ATAC,
@@ -1129,7 +1128,7 @@ ggsave(PCA_AH_ATAC, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_pro
 
 ### PCA fore tibia ####
 L_info_ATAC <- filter(Ot_info_ATAC, Trait == "L")
-L_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% select(contains("L")) 
+L_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% dplyr::select(contains("L")) 
 
 dds_L_ATAC <- DESeqDataSetFromMatrix(countData = L_filtered_counts_ATAC,
                                      colData = L_info_ATAC,
@@ -1156,7 +1155,7 @@ ggsave(PCA_L_ATAC, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_proj
 
 ### PCA elytra ####
 E_info_ATAC <- filter(Ot_info_ATAC, Trait == "E")
-E_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% select(contains("_E")) 
+E_filtered_counts_ATAC <- Ot_filtered_counts_norm %>% dplyr::select(contains("_E")) 
 
 dds_E_ATAC <- DESeqDataSetFromMatrix(countData = E_filtered_counts_ATAC,
                                      colData = E_info_ATAC,
@@ -1669,22 +1668,380 @@ ggsave(Ot_bar_DA, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_proje
 ##### Step 8: assess peaks near doublesex ######
 ## dsx start & end coordinates = Scaffold 7, 7503131, 7570866
 # create list of all peaks near dsx (within 25kb up or downstream)
-near_dsx <- Ot_counts_5 %>% 
+near_dsx <- Ot_counts_ATAC %>% 
   select(1:4) %>% 
   filter(chr == "Scaffold7") %>% 
   filter(start > 7478131 & start < 7595866)
 
 # filter by list of trait_responsive peaks
 trait_res_list <- read.delim("/Users/ericanadolski/GitHub/Beetle-sexual-dimorphism/peak-sets/Otau-sig/trait_res_sorted.txt", col.names = c("peak"))
-trait_res_near_dsx <- inner_join(trait_res_list, near_dsx, by = "peak")
-nrow(trait_res_near_dsx)
+trait_res_near_dsx <- inner_join(trait_res_list, near_dsx, by = "peak") %>% mutate(DA_status = "trait-res")
+trait_res_near_dsx <- trait_res_near_dsx %>% mutate(DA_status = "trait-res")
+head(trait_res_near_dsx)
 
 # filter by list of sex_responsive peaks
 sex_res_list <- read.delim("/Users/ericanadolski/GitHub/Beetle-sexual-dimorphism/peak-sets/Otau-sig/sex_res_sorted.txt", col.names = c("peak"))
-sex_res_near_dsx <- inner_join(sex_res_list, near_dsx, by = "peak")
-nrow(sex_res_near_dsx)
+sex_res_near_dsx <- inner_join(sex_res_list, near_dsx, by = "peak") %>% mutate(DA_status = "sex-res")
 
-##### Step 9: export significant peak tables ######
+# bind into new dataframe
+near_dsx <- rbind(sex_res_near_dsx, trait_res_near_dsx)
+nrow(near_dsx)
+
+write.table(near_dsx, file = "./GitHub/Otaurus_sexual_dimorphism/DA_peaks_near_dsx.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
+
+#### Step 9: enrichment on X chromosome #####
+#### DEGs ####
+## genitalia bar chart ####
+# join tx_coords with DESeq2 output
+Ot_G_MvF_gene$gene <- gsub('.t1','', Ot_G_MvF_gene$gene)
+Ot_G_MvF_gene <- left_join(Ot_G_MvF_gene, Ot_tx_coords, by = "gene")
+head(Ot_G_MvF_gene)
+Ot_G_MvF_gene$chr <- gsub('Scaffold','', Ot_G_MvF_gene$chr)
+Ot_G_MvF_gene$chr <- as.numeric(Ot_G_MvF_gene$chr)
+
+G_DE_summary <- Ot_G_MvF_gene %>%
+  group_by(chr) %>%
+  summarise(
+    total_genes = n(),
+    sig_genes = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_genes-sig_genes) %>%
+  mutate(prop_sig = sig_genes / total_genes) %>%
+  pivot_longer(
+    cols = c(sig_genes, not_sig),
+    names_to = "selection_status",
+    values_to = "n_genes")
+
+G_DE_summary
+
+# plot with proportions on y axis
+G_DE_summary$chr <- factor(G_DE_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+G_DE_summary_plot <- ggplot(G_DE_summary[1:32,],
+                            aes(x = chr, y = n_genes, fill = selection_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = G_DE_summary[1:32,], aes(x = chr, y = -0.005, label = total_genes), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = G_DE_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig_genes" = "grey75", "sig_genes" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of genes",title = "genitalia",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.25)) +
+  theme_classic(base_size = 14)
+
+ggsave(G_DE_summary_plot, file = "/Users/ericanadolski/Desktop/G_DE_summary_plot.pdf",
+       width = 7, height = 5)
+
+## posterior head bar chart ####
+# join tx_coords with DESeq2 output
+Ot_PH_MvF_gene$gene <- gsub('.t1','', Ot_PH_MvF_gene$gene)
+Ot_PH_MvF_gene <- left_join(Ot_PH_MvF_gene, Ot_tx_coords, by = "gene")
+Ot_PH_MvF_gene$chr <- gsub('Scaffold','', Ot_PH_MvF_gene$chr)
+Ot_PH_MvF_gene$chr <- as.numeric(Ot_PH_MvF_gene$chr)
+
+PH_DE_summary <- Ot_PH_MvF_gene %>%
+  group_by(chr) %>%
+  summarise(total_genes = n(), sig_genes = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_genes-sig_genes) %>%
+  mutate(prop_sig = sig_genes / total_genes) %>%
+  pivot_longer(
+    cols = c(sig_genes, not_sig),
+    names_to = "selection_status",
+    values_to = "n_genes")
+
+PH_DE_summary
+
+# plot with proportions on y axis
+PH_DE_summary$chr <- factor(PH_DE_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+PH_DE_summary_plot <- ggplot(PH_DE_summary[1:32,], aes(x = chr, y = n_genes, fill = selection_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = PH_DE_summary[1:32,], aes(x = chr, y = -0.005, label = total_genes), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = PH_DE_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)),
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig_genes" = "grey75", "sig_genes" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of genes",title = "posterior head",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.25)) +
+  theme_classic(base_size = 14)
+
+ggsave(PH_DE_summary_plot, file = "/Users/ericanadolski/Desktop/PH_DE_summary_plot.pdf",
+       width = 7, height = 5)
+
+## anterior head bar chart ####
+# join tx_coords with DESeq2 output
+Ot_AH_MvF_gene$gene <- gsub('.t1','', Ot_AH_MvF_gene$gene)
+Ot_AH_MvF_gene <- left_join(Ot_AH_MvF_gene, Ot_tx_coords, by = "gene")
+Ot_AH_MvF_gene$chr <- gsub('Scaffold','', Ot_AH_MvF_gene$chr)
+Ot_AH_MvF_gene$chr <- as.numeric(Ot_AH_MvF_gene$chr)
+
+AH_DE_summary <- Ot_AH_MvF_gene %>%
+  group_by(chr) %>%
+  summarise(total_genes = n(),sig_genes = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_genes-sig_genes) %>%
+  mutate(prop_sig = sig_genes / total_genes) %>%
+  pivot_longer(
+    cols = c(sig_genes, not_sig),
+    names_to = "selection_status",
+    values_to = "n_genes")
+
+AH_DE_summary
+
+# plot with proportions on y axis
+AH_DE_summary$chr <- factor(AH_DE_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+AH_DE_summary_plot <- ggplot(AH_DE_summary[1:32,], aes(x = chr, y = n_genes, fill = selection_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = AH_DE_summary[1:32,], aes(x = chr, y = -0.005, label = total_genes), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = AH_DE_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig_genes" = "grey75", "sig_genes" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of genes",title = "anterior head",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.25)) +
+  theme_classic(base_size = 14)
+
+ggsave(AH_DE_summary_plot, file = "/Users/ericanadolski/Desktop/AH_DE_summary_plot.pdf",
+       width = 7, height = 5)
+
+## fore tibia bar chart ####
+# join tx_coords with DESeq2 output
+Ot_L_MvF_gene$gene <- gsub('.t1','', Ot_L_MvF_gene$gene)
+Ot_L_MvF_gene <- left_join(Ot_L_MvF_gene, Ot_tx_coords, by = "gene")
+Ot_L_MvF_gene$chr <- gsub('Scaffold','', Ot_L_MvF_gene$chr)
+Ot_L_MvF_gene$chr <- as.numeric(Ot_L_MvF_gene$chr)
+
+L_DE_summary <- Ot_L_MvF_gene %>%
+  group_by(chr) %>%
+  summarise(total_genes = n(),sig_genes = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_genes-sig_genes) %>%
+  mutate(prop_sig = sig_genes / total_genes) %>%
+  pivot_longer(
+    cols = c(sig_genes, not_sig),
+    names_to = "selection_status",
+    values_to = "n_genes")
+
+L_DE_summary
+
+# plot with proportions on y axis
+L_DE_summary$chr <- factor(L_DE_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+L_DE_summary_plot <- ggplot(L_DE_summary[1:32,], aes(x = chr, y = n_genes, fill = selection_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = L_DE_summary[1:32,], aes(x = chr, y = -0.005, label = total_genes), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = L_DE_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig_genes" = "grey75", "sig_genes" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of genes",title = "fore tibia",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.25)) +
+  theme_classic(base_size = 14)
+
+ggsave(L_DE_summary_plot, file = "/Users/ericanadolski/Desktop/L_DE_summary_plot.pdf",
+       width = 7, height = 5)
+
+## elytra bar chart ####
+Ot_E_MvF_gene$gene <- gsub('.t1','', Ot_E_MvF_gene$gene)
+Ot_E_MvF_gene <- left_join(Ot_E_MvF_gene, Ot_tx_coords, by = "gene")
+Ot_E_MvF_gene$chr <- gsub('Scaffold','', Ot_E_MvF_gene$chr)
+Ot_E_MvF_gene$chr <- as.numeric(Ot_E_MvF_gene$chr)
+
+E_DE_summary <- Ot_E_MvF_gene %>%
+  group_by(chr) %>%
+  summarise(total_genes = n(),sig_genes = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_genes-sig_genes) %>%
+  mutate(prop_sig = sig_genes / total_genes) %>%
+  pivot_longer(
+    cols = c(sig_genes, not_sig),
+    names_to = "selection_status",
+    values_to = "n_genes")
+
+E_DE_summary
+
+# plot with proportions on y axis
+E_DE_summary$chr <- factor(E_DE_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+E_DE_summary_plot <- ggplot(E_DE_summary[1:32,], aes(x = chr, y = n_genes, fill = selection_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = E_DE_summary[1:32,], aes(x = chr, y = -0.005, label = total_genes), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = E_DE_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig_genes" = "grey75", "sig_genes" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of genes",title = "elytra",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.25)) +
+  theme_classic(base_size = 14)
+
+ggsave(E_DE_summary_plot, file = "/Users/ericanadolski/Desktop/E_DE_summary_plot.pdf",
+       width = 7, height = 5)
+
+#### DA OCRs ####
+## genitalia bar chart ####
+OtG_sex_res_OCR$chr <- gsub('Scaffold','', OtG_sex_res_OCR$chr)
+OtG_sex_res_OCR$chr <- as.numeric(OtG_sex_res_OCR$chr)
+
+G_DA_summary <- OtG_sex_res_OCR %>%
+  group_by(chr) %>%
+  summarise(
+    total_OCR = n(),
+    sig_OCR = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_OCR-sig_OCR) %>%
+  mutate(prop_sig = sig_OCR / total_OCR) %>%
+  pivot_longer(
+    cols = c(sig_OCR, not_sig),
+    names_to = "sig_status",
+    values_to = "n_genes")
+
+G_DA_summary
+
+# plot with proportions on y axis
+G_DA_summary$chr <- factor(G_DA_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+G_DA_summary_plot <- ggplot(G_DA_summary[1:32,], aes(x = chr, y = n_genes, fill = sig_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = G_DA_summary[1:32,], aes(x = chr, y = -0.005, label = total_OCR), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = G_DA_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig" = "grey75", "sig_OCR" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of OCRs",title = "genitalia",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.75)) +
+  theme_classic(base_size = 14)
+
+ggsave(G_DA_summary_plot, file = "/Users/ericanadolski/Desktop/G_DA_summary_plot.pdf",
+       width = 7, height = 5)
+
+## posterior head bar chart ####
+OtPH_sex_res_OCR$chr <- gsub('Scaffold','', OtPH_sex_res_OCR$chr)
+OtPH_sex_res_OCR$chr <- as.numeric(OtPH_sex_res_OCR$chr)
+
+PH_DA_summary <- OtPH_sex_res_OCR %>%
+  group_by(chr) %>%
+  summarise(
+    total_OCR = n(),
+    sig_OCR = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_OCR-sig_OCR) %>%
+  mutate(prop_sig = sig_OCR / total_OCR) %>%
+  pivot_longer(
+    cols = c(sig_OCR, not_sig),
+    names_to = "sig_status",
+    values_to = "n_genes")
+
+PH_DA_summary
+
+# plot with proportions on y axis
+PH_DA_summary$chr <- factor(PH_DA_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+PH_DA_summary_plot <- ggplot(PH_DA_summary[1:32,], aes(x = chr, y = n_genes, fill = sig_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = PH_DA_summary[1:32,], aes(x = chr, y = -0.005, label = total_OCR), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = PH_DA_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig" = "grey75", "sig_OCR" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of OCRs",title = "posterior head",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.75)) +
+  theme_classic(base_size = 14)
+
+ggsave(PH_DA_summary_plot, file = "/Users/ericanadolski/Desktop/PH_DA_summary_plot.pdf",
+       width = 7, height = 5)
+
+## anterior head bar chart ####
+OtAH_sex_res_OCR$chr <- gsub('Scaffold','', OtAH_sex_res_OCR$chr)
+OtAH_sex_res_OCR$chr <- as.numeric(OtAH_sex_res_OCR$chr)
+
+AH_DA_summary <- OtAH_sex_res_OCR %>%
+  group_by(chr) %>%
+  summarise(
+    total_OCR = n(),
+    sig_OCR = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_OCR-sig_OCR) %>%
+  mutate(prop_sig = sig_OCR / total_OCR) %>%
+  pivot_longer(
+    cols = c(sig_OCR, not_sig),
+    names_to = "sig_status",
+    values_to = "n_genes")
+
+AH_DA_summary
+
+# plot with proportions on y axis
+AH_DA_summary$chr <- factor(AH_DA_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+AH_DA_summary_plot <- ggplot(AH_DA_summary[1:32,], aes(x = chr, y = n_genes, fill = sig_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = AH_DA_summary[1:32,], aes(x = chr, y = -0.005, label = total_OCR), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = AH_DA_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig" = "grey75", "sig_OCR" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of OCRs",title = "anterior head",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.75)) +
+  theme_classic(base_size = 14)
+
+ggsave(AH_DA_summary_plot, file = "/Users/ericanadolski/Desktop/AH_DA_summary_plot.pdf",
+       width = 7, height = 5)
+
+## fore tibia bar chart ####
+OtL_sex_res_OCR$chr <- gsub('Scaffold','', OtL_sex_res_OCR$chr)
+OtL_sex_res_OCR$chr <- as.numeric(OtL_sex_res_OCR$chr)
+
+L_DA_summary <- OtL_sex_res_OCR %>%
+  group_by(chr) %>%
+  summarise(
+    total_OCR = n(),
+    sig_OCR = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_OCR-sig_OCR) %>%
+  mutate(prop_sig = sig_OCR / total_OCR) %>%
+  pivot_longer(
+    cols = c(sig_OCR, not_sig),
+    names_to = "sig_status",
+    values_to = "n_genes")
+
+L_DA_summary
+
+# plot with proportions on y axis
+L_DA_summary$chr <- factor(L_DA_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+L_DA_summary_plot <- ggplot(L_DA_summary[1:32,], aes(x = chr, y = n_genes, fill = sig_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = L_DA_summary[1:32,], aes(x = chr, y = -0.005, label = total_OCR), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = L_DA_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig" = "grey75", "sig_OCR" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of OCRs",title = "fore tibia",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.75)) +
+  theme_classic(base_size = 14)
+
+ggsave(L_DA_summary_plot, file = "/Users/ericanadolski/Desktop/L_DA_summary_plot.pdf",
+       width = 7, height = 5)
+
+## elytra bar chart ####
+OtE_sex_res_OCR$chr <- gsub('Scaffold','', OtE_sex_res_OCR$chr)
+OtE_sex_res_OCR$chr <- as.numeric(OtE_sex_res_OCR$chr)
+
+E_DA_summary <- OtE_sex_res_OCR %>%
+  group_by(chr) %>%
+  summarise(
+    total_OCR = n(),
+    sig_OCR = sum(padj < 0.1, na.rm = TRUE)) %>%
+  mutate(not_sig=total_OCR-sig_OCR) %>%
+  mutate(prop_sig = sig_OCR / total_OCR) %>%
+  pivot_longer(
+    cols = c(sig_OCR, not_sig),
+    names_to = "sig_status",
+    values_to = "n_genes")
+
+E_DA_summary
+
+# plot with proportions on y axis
+E_DA_summary$chr <- factor(E_DA_summary$chr, levels = c("8","1","2","3","4","5","6","7","9","10","11","12","13","14","15","16"))
+E_DA_summary_plot <- ggplot(E_DA_summary[1:32,], aes(x = chr, y = n_genes, fill = sig_status)) +
+  geom_col(position = "fill") +
+  geom_text(data = E_DA_summary[1:32,], aes(x = chr, y = -0.005, label = total_OCR), inherit.aes = FALSE, size = 4) +
+  geom_text(
+    data = E_DA_summary[1:32,], aes(x = chr, y = prop_sig,label = scales::percent(prop_sig, accuracy = 0.1)), 
+    inherit.aes = FALSE, vjust = -0.4, color = "black", size = 4) +
+  scale_fill_manual(values = c("not_sig" = "grey75", "sig_OCR" = "black")) +
+  labs(x = "Scaffold", y = "Proportion of OCRs",title = "elytra",fill = NULL) +
+  coord_cartesian(ylim = c(0, 0.75)) +
+  theme_classic(base_size = 14)
+
+ggsave(E_DA_summary_plot, file = "/Users/ericanadolski/Desktop/E_DA_summary_plot.pdf",
+       width = 7, height = 5)
+
+
+##### Step 10: export significant peak tables ######
 ### export sex-responsive peaks sets ####
 write.table(OtPH_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtPH_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
 write.table(OtAH_sex_res_sig, file = "./GitHub/Beetle-sexual-dimorphism/peak-sets/OtAH_sex_res_peaks.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
